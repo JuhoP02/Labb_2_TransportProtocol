@@ -393,12 +393,11 @@ void tolayer5(int AorB, char datasent[20]) {
 
 unsigned short int cksum(unsigned char *data, unsigned int bytes) {
 
-  // Compliant with RFC 1071
+  // Kinda compliant with RFC 1071: https://www.rfc-editor.org/rfc/rfc1071
   register unsigned int sum = 0;
 
   while (bytes > 1) {
     sum += *((unsigned short int *)data++);
-    // printf("%hu\n", *((unsigned short int *)data));
     bytes -= 2;
   }
 

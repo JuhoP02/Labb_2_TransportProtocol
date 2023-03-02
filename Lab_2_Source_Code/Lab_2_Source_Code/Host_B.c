@@ -19,27 +19,29 @@ void B_output(struct msg message) { /* DON'T IMPLEMENT */
 void B_input(struct pkt packet) { // HANDLES RECEIVING PACKET
   struct pkt *ack_pkt;
   // printf("PACKET ARRIVED AT B - Packet from A: cksum: %d\t Packet at B:
-  // cksum: %d\n", packet.checksum, cksum((unsigned char *)packet.payload, 20));
+  //  cksum: %d\n", packet.checksum, cksum((unsigned char *)packet.payload,
+  //  20));
 
   // printf("HOST_B A.seq %d\t B.seq %d\n", packet.seqnum, last_pkt_B->seqnum);
 
   // printf("Packet at B: %d, %d, %s\n", packet.seqnum, packet.checksum,
-  // packet.payload);
+  //        packet.payload);
 
   if (packet.checksum != cksum((unsigned char *)packet.payload, 20)) {
-    printf("Checksum Error B! %d %d\n", packet.checksum,
-           cksum((unsigned char *)packet.payload, 20));
+    // printf("Checksum Error B! %d %d\n", packet.checksum,cksum((unsigned char
+    // *)packet.payload, 20));
     return;
   }
 
   // Check if seq number is corrupted
   if (packet.seqnum != 1 && packet.seqnum != 0) {
-    printf("Packet seqnum corrupted B\n");
+    // printf("Packet seqnum corrupted B\n");
     return;
   }
 
   // Create acknowledgment packet
   ack_pkt = (struct pkt *)malloc(sizeof(struct pkt));
+  // ack_pkt->acknum = packet.seqnum;
   ack_pkt->acknum = packet.acknum;
   // memset(ack_pkt->payload, 0, 20); // Zero the payload
   strcpy(ack_pkt->payload, packet.payload);
@@ -47,7 +49,8 @@ void B_input(struct pkt packet) { // HANDLES RECEIVING PACKET
 
   // Check for duplicate packet
   if (packet.seqnum == last_seq) {
-    printf(YELLOW "Duplicate Detected at B!\n" END);
+    // printf(YELLOW "Duplicate Detected at B!\n" END);
+    // printf("%d, %d\n", packet.seqnum, last_seq);
     tolayer3(B, *ack_pkt); // Send ack packet (to A)
     return;
   }

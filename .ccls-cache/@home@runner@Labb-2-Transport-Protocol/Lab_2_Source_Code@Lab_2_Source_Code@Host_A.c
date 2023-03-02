@@ -13,7 +13,7 @@
 
 #define DEFAULT_TIMEOUT 15
 
-#define RTT_WEIGHT 0.8
+#define RTT_WEIGHT 0.9
 
 #define TIMEOUT (avg_rtt * 2)
 //#define TIMEOUT 15
@@ -34,6 +34,9 @@ int to_count = 0;
 
 // 0 or 1 if host A can send next packet
 int canSend = 1;
+
+// 0 or 1 if timer is on
+int time_state = 0;
 
 // Create packet from a message
 struct pkt *make_packet(struct msg message);
@@ -61,20 +64,20 @@ void A_output(struct msg message) { // HANDLES SENDING PACKET
 
 /* Called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet) { // HANDLES RECEIVING ACK PACKET
-
-  // printf(GREEN "Ack Packet " END YELLOW "%c" END" arrived AT A from B
-  // -packetcksum %d\taccksum: %d\n",packet.payload[0],
-  // packet.checksum,cksum((unsigned char *)packet.payload, 20));
+  // printf(GREEN "Ack Packet " END YELLOW "%c" END
+  //              " arrived AT A from B - packetcksum % d\taccksum: % d\n ",
+  //        packet.payload[0], packet.checksum,
+  //        cksum((unsigned char *)packet.payload, 20));
 
   // Check for corruption with checksum
   if (packet.checksum != cksum((unsigned char *)packet.payload, 20)) {
-    printf("Checksum Error A!\n");
+    // printf("Checksum Error A!\n");
     return;
   }
 
   //  Check if seq number is corrupted
   if (packet.acknum != 1 && packet.acknum != 0) {
-    printf("Acknum corrupted A!\n");
+    // printf("Acknum corrupted A!\n");
     // printf("acknum A %d\n", packet.acknum);
     return;
   }
@@ -82,7 +85,7 @@ void A_input(struct pkt packet) { // HANDLES RECEIVING ACK PACKET
   // Check ack num
   if (packet.acknum !=
       last_pkt->acknum) { // Check for corrupted packet and seq number
-    printf("Ack incorrect!\n");
+    // printf("Ack incorrect!\n");
     return;
   }
 
@@ -93,7 +96,9 @@ void A_input(struct pkt packet) { // HANDLES RECEIVING ACK PACKET
   canSend = 1;
 
   // printf("Stopping timer at A \n");
-  stoptimer(A); // Stop timer
+  if (time_state)
+    stoptimer(A); // Stop timer
+  time_state = 0;
 
   // Add another successful packet sent and recieved
   packets_sr++;
@@ -125,6 +130,7 @@ void A_timerinterrupt() { /* TODO */ //   HANDLES TIMEOUT
 
   // Start timer for new packet
   starttimer(A, TIMEOUT);
+  time_state = 1;
 }
 
 /* The following routine will be called once (only) before any other */
@@ -145,6 +151,7 @@ struct pkt *make_packet(struct msg message) {
 
   struct pkt *pkt = (struct pkt *)malloc(sizeof(struct pkt));
   pkt->seqnum = seqnum;
+  pkt->acknum = seqnum;
   pkt->checksum = cksum((unsigned char *)message.data, 20);
   for (int i = 0; i < 20; i++)
     pkt->payload[i] = message.data[i];
@@ -164,19 +171,12 @@ void send_next() {
   // Get Next message from queue
   struct msg msg = dequeue();
 
-  // Check if message is empty
-  // if (msg.data[0] == ' ') {
-  //   printf("value in msg.data: %c\n", msg.data[0]);
-  //   printf("Empty data value!\n");
-  //   free(pkt);
-  //   return;
-  // }
-
   // Make packet
   pkt = make_packet(msg);
 
   // Save last packet
   last_pkt->seqnum = pkt->seqnum;
+  last_pkt->acknum = pkt->acknum;
   last_pkt->checksum = pkt->checksum;
   strcpy(last_pkt->payload, pkt->payload);
 
@@ -192,6 +192,7 @@ void send_next() {
 
   // Start timer for packet
   starttimer(A, TIMEOUT);
+  time_state = 1;
 
   // Free the packet
   free(pkt);
@@ -208,6 +209,6 @@ float calc_rtt() {
 
   // printf("Difference: %f\tnum_p: %d\n", (stop_time - start_time),
   // packets_sr);
-  printf("Average rtt: %f\n", avg_rtt);
+  // printf("Average rtt: %f\n", avg_rtt);
   return avg_rtt;
 }

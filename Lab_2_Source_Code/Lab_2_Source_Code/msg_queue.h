@@ -6,7 +6,7 @@
 
 #include "Sim_Engine.h"
 
-#define MAX_SIZE 50
+#define MAX_SIZE 10000
 
 void enqueue(struct msg message);
 struct msg dequeue();
